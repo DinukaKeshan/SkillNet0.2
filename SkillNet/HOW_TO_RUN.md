@@ -84,7 +84,7 @@ curl http://localhost:11434/api/tags
 
 ### Step 1: Verify Folder Structure
 
-Make sure both projects are in the correct structure. The SVE project must be **inside** the SkillNet folder:
+The SVE project is already inside the SkillNet folder. Verify this structure exists:
 
 ```
 SkillNet/
@@ -99,22 +99,14 @@ SkillNet/
 │   ├── teamRecommenderNew/
 │   ├── projectMatcherNew/
 │   └── recruiterEngine/
-├── Skill-Verification-Engine/        ← SVE project goes here
+├── Skill-Verification-Engine/        ← Already here
 │   ├── Backend/
 │   ├── Frontend/
 │   └── ml_service/
 └── docker-compose.yml
 ```
 
-If SVE is in a different location, copy or symlink it:
-```bash
-# From the SkillNet root directory
-# Option A: Copy
-xcopy /E /I "D:\Projects\Important\Skill-Verification-Engine" ".\Skill-Verification-Engine"
-
-# Option B: Symlink (run as Admin)
-mklink /D ".\Skill-Verification-Engine" "D:\Projects\Important\Skill-Verification-Engine"
-```
+> **Note:** The `docker-compose.yml` references `./Skill-Verification-Engine/` relative to the SkillNet root. You do **not** need a separate copy of SVE outside the SkillNet folder.
 
 ### Step 2: Start Ollama
 
