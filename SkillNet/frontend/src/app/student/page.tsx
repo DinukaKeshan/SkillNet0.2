@@ -523,6 +523,28 @@ export default function StudentDashboard() {
                       </Button>
                       <Button
                         size="small"
+                        variant="outlined"
+                        color="primary"
+                        onClick={() => {
+                          const token = localStorage.getItem("token");
+                          window.open(
+                            `http://localhost:5173/verify-skill?skill=${encodeURIComponent(skill)}&token=${encodeURIComponent(token || "")}`,
+                            "_blank"
+                          );
+                        }}
+                        sx={{
+                          minWidth: "auto",
+                          px: 1,
+                          py: 0.25,
+                          fontSize: "0.7rem",
+                          height: "24px",
+                          textTransform: "none"
+                        }}
+                      >
+                        Quiz
+                      </Button>
+                      <Button
+                        size="small"
                         variant="text"
                         color="error"
                         onClick={() => handleRemoveSkill(skill, "unverified")}

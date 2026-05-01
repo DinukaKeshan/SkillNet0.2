@@ -1090,7 +1090,12 @@ app.put("/api/verifySkill", async (req: Request, res: Response) => {
     );
 
     if (!rows.length) {
-      return res.status(404).json({ error: "No skills found" });
+      // No skills row yet — create one with the skill directly in verified
+      await pool.query(
+        "INSERT INTO skills (student_id, unverified_skills, verified_skills) VALUES (?, ?, ?)",
+        [decoded.id, JSON.stringify([]), JSON.stringify([skill])]
+      );
+      return res.json({ message: "Skill verified successfully" });
     }
 
     // Parse JSON strings returned by MariaDB
@@ -1101,15 +1106,24 @@ app.put("/api/verifySkill", async (req: Request, res: Response) => {
     if (!Array.isArray(unverified)) unverified = [];
     if (!Array.isArray(verified)) verified = [];
 
-    // Check if skill exists in unverified list
-    const index = unverified.indexOf(skill);
-    if (index === -1) {
-      return res.status(400).json({ error: "Skill not found in unverified list" });
+    // Check if skill is already verified (case-insensitive)
+    const alreadyVerified = verified.some((v: string) => v.toLowerCase() === skill.toLowerCase());
+    if (alreadyVerified) {
+      return res.json({ message: "Skill already verified" });
     }
 
-    // Move skill from unverified to verified
-    unverified.splice(index, 1);
-    verified.push(skill);
+    // Find skill in unverified list (case-insensitive)
+    const index = unverified.findIndex((s: string) => s.toLowerCase() === skill.toLowerCase());
+    if (index !== -1) {
+      // Move skill from unverified to verified (preserve original casing from unverified list)
+      const originalSkill = unverified[index];
+      unverified.splice(index, 1);
+      verified.push(originalSkill);
+    } else {
+      // Skill not in unverified list — add directly to verified
+      // This handles the case where SVE verified a skill that was added there, not in SkillNet
+      verified.push(skill);
+    }
 
     await pool.query(
       "UPDATE skills SET unverified_skills = ?, verified_skills = ? WHERE student_id = ?",

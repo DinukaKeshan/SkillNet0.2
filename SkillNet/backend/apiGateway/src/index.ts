@@ -15,7 +15,7 @@ const BACKEND_BASE_URL = process.env.BACKEND_BASE_URL || "http://localhost:5001"
 
 // ✅ Allow requests from frontend (support both ports 3000 and 3001)
 app.use(cors({
-  origin: ["http://localhost:3000", "http://localhost:3001"],
+  origin: ["http://localhost:3000", "http://localhost:3001", "http://localhost:5173"],
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true,
@@ -25,7 +25,7 @@ app.use(express.json());
 
 app.use((req, res, next) => {
   const origin = req.headers.origin;
-  if (origin === "http://localhost:3000" || origin === "http://localhost:3001") {
+  if (origin === "http://localhost:3000" || origin === "http://localhost:3001" || origin === "http://localhost:5173") {
     res.header("Access-Control-Allow-Origin", origin);
   }
   res.header("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
@@ -806,6 +806,28 @@ app.post("/api/teams/hiring-requests/:id/reject", verifyToken, async (req: Reque
   } catch (err: any) {
     console.error("Gateway rejectRequest error:", err.message);
     res.status(err.response?.status || 500).json(err.response?.data || { error: "Failed to reject request" });
+  }
+});
+
+// =====================================================
+// SKILL VERIFICATION ENGINE (SVE) BRIDGE ROUTE
+// =====================================================
+
+app.post("/api/skill-verification/verify-result", verifyToken, async (req: Request, res: Response) => {
+  try {
+    const { skill, skill_level, confidence, attemptId } = req.body;
+    const response = await axios.put(`${BACKEND_BASE_URL}/api/verifySkill`, {
+      skill,
+      skill_level,
+      confidence,
+      attemptId,
+    }, {
+      headers: { Authorization: (req.headers.authorization || "") },
+    });
+    res.json(response.data);
+  } catch (err: any) {
+    console.error("Gateway skill-verification verify-result error:", err.message);
+    res.status(err.response?.status || 500).json(err.response?.data || { error: "Failed to forward verification result" });
   }
 });
 

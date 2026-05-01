@@ -157,6 +157,75 @@ services:
         condition: service_healthy
     networks:
       - skillnet-network
+  # ============================================
+  # SVE MongoDB (Port 27018)
+  # ============================================
+  sve-mongo:
+    image: mongo:7
+    container_name: sve-mongo
+    restart: unless-stopped
+    ports:
+      - "27018:27017"
+    volumes:
+      - sve-mongo-data:/data/db
+    networks:
+      - skillnet-network
+
+  # ============================================
+  # SVE Backend (Port 5005)
+  # ============================================
+  sve-backend:
+    build:
+      context: ./Skill-Verification-Engine/Backend
+      dockerfile: Dockerfile
+    container_name: sve-backend
+    restart: unless-stopped
+    environment:
+      MONGO_URI: mongodb://sve-mongo:27017/skill_verification
+      JWT_SECRET: supersecretjwtkey123
+      ML_SERVICE_URL: http://sve-ml:8000
+      SKILLNET_GATEWAY_URL: http://api-gateway:5000
+      OLLAMA_URL: http://host.docker.internal:11434/api/generate
+      PORT: 5005
+    ports:
+      - "5005:5005"
+    depends_on:
+      - sve-mongo
+    networks:
+      - skillnet-network
+
+  # ============================================
+  # SVE ML Service (Port 8001)
+  # ============================================
+  sve-ml:
+    build:
+      context: ./Skill-Verification-Engine/ml_service
+      dockerfile: Dockerfile
+    container_name: sve-ml
+    restart: unless-stopped
+    ports:
+      - "8001:8000"
+    networks:
+      - skillnet-network
+
+  # ============================================
+  # SVE Frontend (Port 5173)
+  # ============================================
+  sve-frontend:
+    build:
+      context: ./Skill-Verification-Engine/Frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_SVE_API_URL: http://localhost:5005/api
+        VITE_SKILLNET_GATEWAY_URL: http://localhost:5000
+    container_name: sve-frontend
+    restart: unless-stopped
+    ports:
+      - "5173:80"
+    depends_on:
+      - sve-backend
+    networks:
+      - skillnet-network
 
 # ============================================
 # Networks
@@ -172,3 +241,5 @@ networks:
 volumes:
   skillnet-db-data:
     name: skillnet-db-data
+  sve-mongo-data:
+    name: sve-mongo-data
